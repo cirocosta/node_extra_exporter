@@ -1,0 +1,8 @@
+[package]
+name = "node_extra_exporter"
+description = "Missing metrics from `node_exporter`"
+version = "0.1.0"
+authors = ["Ciro S. Costa <cscosta@pivotal.io>"]
+edition = "2018"
+
+[dependencies]
