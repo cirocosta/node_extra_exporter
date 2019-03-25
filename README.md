@@ -6,6 +6,14 @@
 
 ### `schedstat`
 
+
+```
+node_schedstat_running_seconds_total{cpu="0"} 	123
+node_schedstat_waiting_seconds_total{cpu="0"} 	123
+node_schedstat_timeslices_total{cpu="0"} 	123
+```
+
+
 Sample output from `/proc/schedstat`:
 
 ```

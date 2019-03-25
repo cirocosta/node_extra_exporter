@@ -1,6 +1,9 @@
 FROM rust:1.33 AS base
 
-	RUN rustup target add x86_64-unknown-linux-musl
+	RUN set -ex ; \
+		rustup install nightly ; \
+		rustup default nightly ; \
+		rustup target add x86_64-unknown-linux-musl ;
 
 	WORKDIR /usr/src/myapp
 	COPY . .

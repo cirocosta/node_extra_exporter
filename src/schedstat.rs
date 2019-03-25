@@ -1,11 +1,23 @@
+extern crate libc;
+
 use std::fs;
 use std::io::Error;
 use std::result::Result;
+
+lazy_static! {
+    /// The number of clock ticks per second
+    static ref CLK_TCK: f64 = { unsafe { libc::sysconf(libc::_SC_CLK_TCK) as f64 } };
+}
 
 pub struct Stat {
     total_running: usize,
     total_waiting: usize,
     timeslices: usize,
+}
+
+#[inline]
+pub fn jiffies_to_seconds(jiffies: usize) -> f64 {
+    jiffies as f64 / *CLK_TCK
 }
 
 /// Retrieves a vector of `Stat` structs after parsing
@@ -39,6 +51,7 @@ pub fn collect_system_schedstat(filepath: &str) -> Result<Vec<Stat>, Error> {
 fn parse_schedstat(contents: &str) -> Vec<Stat> {
     let mut v: Vec<Stat> = Vec::new();
 
+    // [cc]: instead, `reduce` it?
     for line in contents.lines() {
         if !line.starts_with("cpu") {
             continue;
