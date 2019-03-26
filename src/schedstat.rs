@@ -1,8 +1,10 @@
 extern crate libc;
 
 use std::fs;
-use std::io::Error;
+use std::io;
+use std::io::{Error, Write};
 use std::result::Result;
+use std::string::ToString;
 
 lazy_static! {
     /// The number of clock ticks per second
@@ -13,6 +15,29 @@ pub struct Stat {
     total_running: usize,
     total_waiting: usize,
     timeslices: usize,
+}
+
+const SCHEDSTAT_DESCRIPTIONS: &'static [u8] = b"# ---
+# HELP node_schedstat_running_seconds_total
+# HELP node_schedstat_waiting_seconds_total
+# HELP node_schedstat_timeslices_seconds_total
+";
+
+impl Stat {
+    fn write_descriptions(&self, mut w: impl Write) -> io::Result<()> {
+        w.write_all(SCHEDSTAT_DESCRIPTIONS)
+    }
+
+    fn to_prometheus_sample(&self, cpu: usize) -> String {
+        let mut text = String::with_capacity(10);
+        text.push_str(r#"node_schedstat_running_seconds_total{cpu=""#);
+        text.push_str(&cpu.to_string());
+        text.push_str(r#""} "#);
+        text.push_str(&self.total_running.to_string());
+        text.push('\n');
+
+        text
+    }
 }
 
 #[inline]
@@ -158,5 +183,19 @@ bar",
         assert_eq!(stats.len(), 2);
         assert_eq!(stats[0].total_running, 410561491017);
         assert_eq!(stats[1].total_running, 413817093364);
+    }
+
+    #[test]
+    fn test_to_prometheus_sample() {
+        let stat = Stat {
+            total_running: 123,
+            total_waiting: 456,
+            timeslices: 789,
+        };
+
+        assert_eq!(
+            stat.to_prometheus_sample(1),
+            "node_schedstat_running_seconds_total{cpu=\"1\"} 123\n",
+        );
     }
 }

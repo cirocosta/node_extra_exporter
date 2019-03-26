@@ -1,5 +1,6 @@
 extern crate hyper;
 
+use crate::schedstat::collect_system_schedstat;
 use hyper::rt::Future;
 use hyper::service::service_fn_ok;
 use hyper::{Body, Request, Response, Server};
@@ -8,7 +9,9 @@ use std::net::SocketAddr;
 const PHRASE: &str = "Hello, World!";
 
 fn handle_hello_world(_req: Request<Body>) -> Response<Body> {
-    // return here
+    // collect
+    // write to response
+    //
     Response::new(Body::from(PHRASE))
 }
 
