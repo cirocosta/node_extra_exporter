@@ -1,6 +1,6 @@
 extern crate hyper;
 
-use crate::schedstat::collect_system_schedstat;
+use crate::schedstat::{collect_system_schedstat, processor_count};
 use hyper::rt::Future;
 use hyper::service::service_fn_ok;
 use hyper::{Body, Request, Response, Server};
@@ -9,9 +9,17 @@ use std::net::SocketAddr;
 const PHRASE: &str = "Hello, World!";
 
 fn handle_hello_world(_req: Request<Body>) -> Response<Body> {
-    // collect
-    // write to response
-    //
+    let stats = match collect_system_schedstat("/proc/schedstat") {
+        Err(err) => panic!("failed to collect statistics - {}", err),
+        Ok(stats) => stats,
+    };
+
+    // depends on the number of CPUs we have
+    //  - get the CPU count?
+    let response = String::with_capacity(processor_count());
+
+    for stat in stats {}
+
     Response::new(Body::from(PHRASE))
 }
 

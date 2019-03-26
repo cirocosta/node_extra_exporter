@@ -2,13 +2,16 @@ extern crate libc;
 
 use std::fs;
 use std::io;
-use std::io::{Error, Write};
+use std::io::Error;
 use std::result::Result;
 use std::string::ToString;
 
 lazy_static! {
     /// The number of clock ticks per second
-    static ref CLK_TCK: f64 = { unsafe { libc::sysconf(libc::_SC_CLK_TCK) as f64 } };
+    static ref CLK_TCK: usize = { unsafe { libc::sysconf(libc::_SC_CLK_TCK) as usize } };
+
+    /// The number of processors currently online (available)
+    static ref NPROCESSORS_ONLN: usize = {  unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize } };
 }
 
 pub struct Stat {
@@ -20,29 +23,55 @@ pub struct Stat {
 const SCHEDSTAT_DESCRIPTIONS: &'static [u8] = b"# ---
 # HELP node_schedstat_running_seconds_total
 # HELP node_schedstat_waiting_seconds_total
-# HELP node_schedstat_timeslices_seconds_total
+# HELP node_schedstat_seconds_total
 ";
 
-impl Stat {
-    fn write_descriptions(&self, mut w: impl Write) -> io::Result<()> {
-        w.write_all(SCHEDSTAT_DESCRIPTIONS)
-    }
+#[inline]
+pub fn jiffies_to_seconds(jiffies: usize) -> usize {
+    jiffies / *CLK_TCK
+}
 
-    fn to_prometheus_sample(&self, cpu: usize) -> String {
-        let mut text = String::with_capacity(10);
-        text.push_str(r#"node_schedstat_running_seconds_total{cpu=""#);
-        text.push_str(&cpu.to_string());
-        text.push_str(r#""} "#);
-        text.push_str(&self.total_running.to_string());
-        text.push('\n');
+pub fn processor_count() -> usize {
+    *NPROCESSORS_ONLN
+}
+
+impl Stat {
+    fn to_prometheus_samples(&self, cpu: usize) -> String {
+        let mut text = String::with_capacity(3);
+
+        text.push_str(&to_prometheus_sample(
+            "node_schedstat_running_seconds_total",
+            cpu,
+            jiffies_to_seconds(self.total_running),
+        ));
+
+        text.push_str(&to_prometheus_sample(
+            "node_schedstat_waiting_seconds_total",
+            cpu,
+            jiffies_to_seconds(self.total_waiting),
+        ));
+
+        text.push_str(&to_prometheus_sample(
+            "node_schedstat_seconds_total",
+            cpu,
+            jiffies_to_seconds(self.timeslices),
+        ));
 
         text
     }
 }
 
-#[inline]
-pub fn jiffies_to_seconds(jiffies: usize) -> f64 {
-    jiffies as f64 / *CLK_TCK
+fn to_prometheus_sample(metric_name: &str, cpu: usize, value: usize) -> String {
+    let mut text = String::with_capacity(10);
+
+    text.push_str(metric_name);
+    text.push_str(r#"{cpu=""#);
+    text.push_str(&cpu.to_string());
+    text.push_str(r#""} "#);
+    text.push_str(&value.to_string());
+    text.push('\n');
+
+    text
 }
 
 /// Retrieves a vector of `Stat` structs after parsing
@@ -186,7 +215,7 @@ bar",
     }
 
     #[test]
-    fn test_to_prometheus_sample() {
+    fn test_stat_to_prometheus_samples() {
         let stat = Stat {
             total_running: 123,
             total_waiting: 456,
@@ -194,7 +223,18 @@ bar",
         };
 
         assert_eq!(
-            stat.to_prometheus_sample(1),
+            stat.to_prometheus_samples(1),
+            "node_schedstat_running_seconds_total{cpu=\"1\"} 1
+node_schedstat_waiting_seconds_total{cpu=\"1\"} 4
+node_schedstat_seconds_total{cpu=\"1\"} 7
+",
+        );
+    }
+
+    #[test]
+    fn test_to_prometheus_sample() {
+        assert_eq!(
+            to_prometheus_sample("node_schedstat_running_seconds_total", 1, 123),
             "node_schedstat_running_seconds_total{cpu=\"1\"} 123\n",
         );
     }
