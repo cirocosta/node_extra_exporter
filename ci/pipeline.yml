@@ -8,7 +8,7 @@ resources:
     type: registry-image
     source:
       repository: cirocosta/node_extra_exporter
-      username: ((docker-username))
+      username: ((docker-user))
       password: ((docker-password))
 
 
