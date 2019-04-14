@@ -1,4 +1,4 @@
-# node_extra_exporter ![](https://hush-house.pivotal.io/api/v1/teams/main/pipelines/node_extra_exporter/badge)
+# node_extra_exporter [![](https://hush-house.pivotal.io/api/v1/teams/main/pipelines/node_extra_exporter/badge)](https://hush-house.pivotal.io/teams/main/pipelines/node_extra_exporter)
 
 > missing metrics from [`node_exporter`](https://github.com/prometheus/node_exporter)
 
