@@ -11,17 +11,30 @@ resources:
       username: ((docker-user))
       password: ((docker-password))
 
+  - name: builder
+    type: registry-image
+    source:
+      repository: cirocosta/builder
 
 jobs:
   - name: build
     public: true
     serial: true
     plan:
-      - get: repository
-        trigger: true
-      - task: build-image
-        privileged: true
-        file: repository/ci/tasks/build-image.yml
+      - aggregate:
+        - get: repository
+          trigger: true
+        - get: builder
+      - aggregate:
+        - task: build
+          image: builder
+          privileged: true
+          file: repository/ci/tasks/build-image.yml
+        - task: test
+          params: { TARGET: test }
+          image: builder
+          privileged: true
+          file: repository/ci/tasks/build-image.yml
       - put: container-image
         inputs: [image]
         get_params: {format: oci}

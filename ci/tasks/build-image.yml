@@ -9,6 +9,7 @@ params:
   REPOSITORY: cirocosta/node_extra_exporter
   TAG: latest
   CONTEXT: repository
+  TARGET: ~
 
 inputs:
 - name: repository
