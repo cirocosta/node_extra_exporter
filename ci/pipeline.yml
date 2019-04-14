@@ -24,16 +24,16 @@ jobs:
         - get: repository
           trigger: true
         - get: builder
+          trigger: true
       - aggregate:
         - task: build
           image: builder
           privileged: true
           file: repository/ci/tasks/build-image.yml
         - task: test
-          params: { TARGET: test }
           image: builder
           privileged: true
-          file: repository/ci/tasks/build-image.yml
+          file: repository/ci/tasks/test-image.yml
       - put: container-image
         inputs: [image]
         get_params: {format: oci}
