@@ -14,4 +14,8 @@ params:
 inputs:
 - name: repository
 
+outputs:
+- name: test-image
+  path: image
+
 run: {path: build}
