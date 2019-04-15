@@ -1,34 +1,37 @@
-extern crate hyper;
-
-use crate::schedstat::{collect_system_schedstat, processor_count};
-use hyper::rt::Future;
-use hyper::service::service_fn_ok;
-use hyper::{Body, Request, Response, Server};
 use std::net::SocketAddr;
 
-const PHRASE: &str = "Hello, World!";
+use crate::schedstat::collect_system_schedstat;
 
-fn handle_hello_world(_req: Request<Body>) -> Response<Body> {
-    let stats = match collect_system_schedstat("/proc/schedstat") {
+use hyper::rt::Future;
+use hyper::service::service_fn_ok;
+use hyper::{Body, Response, Server};
+
+fn handle_metrics(procfs: &str) -> Response<Body> {
+    let stats = match collect_system_schedstat(&procfs) {
         Err(err) => panic!("failed to collect statistics - {}", err),
         Ok(stats) => stats,
     };
 
-    // depends on the number of CPUs we have
-    //  - get the CPU count?
-    let response = String::with_capacity(processor_count());
-
-    for stat in stats {}
-
-    Response::new(Body::from(PHRASE))
+    Response::new(Body::from(
+        stats
+            .iter()
+            .enumerate()
+            .map(|(idx, stat)| stat.to_prometheus_samples(idx))
+            .collect::<String>(),
+    ))
 }
 
-pub fn serve(address: &str) {
+pub fn serve(address: &str, procfs: String) {
     let addr: SocketAddr = address.parse().unwrap();
-    let new_svc = || service_fn_ok(handle_hello_world);
+
+    let metrics_svc = move || {
+        let procfs = procfs.clone();
+
+        service_fn_ok(move |_| handle_metrics(&procfs))
+    };
 
     let server = Server::bind(&addr)
-        .serve(new_svc)
+        .serve(metrics_svc)
         .map_err(|e| println!("server error: {}", e));
 
     println!("listening on {}", address);

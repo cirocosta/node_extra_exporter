@@ -17,10 +17,14 @@ fn main() {
                 .help("IP address to listen for Prometheus requests"),
             Arg::with_name("procfs")
                 .default_value("/proc")
+                .short("p")
                 .long("procfs")
                 .help("Location where `procfs` is mounted to"),
         ])
         .get_matches();
 
-    server::serve(&value_t!(matches, "address", String).unwrap());
+    server::serve(
+        &value_t!(matches, "address", String).unwrap(),
+        value_t!(matches, "procfs", String).unwrap(),
+    );
 }

@@ -1,17 +1,18 @@
-extern crate libc;
-
 use std::fs;
-use std::io;
 use std::io::Error;
 use std::result::Result;
 use std::string::ToString;
 
 lazy_static! {
+
     /// The number of clock ticks per second
+    ///
     static ref CLK_TCK: usize = { unsafe { libc::sysconf(libc::_SC_CLK_TCK) as usize } };
 
     /// The number of processors currently online (available)
+    ///
     static ref NPROCESSORS_ONLN: usize = {  unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize } };
+
 }
 
 pub struct Stat {
@@ -36,7 +37,7 @@ pub fn processor_count() -> usize {
 }
 
 impl Stat {
-    fn to_prometheus_samples(&self, cpu: usize) -> String {
+    pub fn to_prometheus_samples(&self, cpu: usize) -> String {
         let mut text = String::with_capacity(3);
 
         text.push_str(&to_prometheus_sample(
