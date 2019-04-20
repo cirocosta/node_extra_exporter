@@ -1,0 +1,23 @@
+platform: linux
+
+inputs: 
+  - name: repository
+    path: .
+
+outputs: 
+  - name: release
+    path: target/release
+
+caches: 
+  - path: target
+
+params: 
+  CARGO_COMMAND: ""
+
+run:
+  path: /bin/sh
+  args:
+    - -ce
+    - |
+      chown -R pi .
+      su pi --login -c "cd $PWD && cargo $CARGO_COMMAND"

@@ -20,20 +20,30 @@ jobs:
   - name: build
     public: true
     plan:
+      - get: repository
+        trigger: true
       - aggregate:
-        - get: repository
-          trigger: true
-        - get: builder
-          trigger: true
-      - aggregate:
-        - task: build
-          image: builder
-          privileged: true
-          file: repository/ci/tasks/build-image.yml
-        - task: test
-          image: builder
-          privileged: true
-          file: repository/ci/tasks/test-image.yml
+        - do:
+          - get: builder
+            trigger: true
+          - aggregate:
+            - task: build
+              image: builder
+              privileged: true
+              file: repository/ci/tasks/build-image.yml
+            - task: test
+              image: builder
+              privileged: true
+              file: repository/ci/tasks/test-image.yml
+        - do:
+          - task: test-arm
+            tags: [arm]
+            params: {CARGO_COMMAND: "test"}
+            file: repository/ci/tasks/arm-run.yml
+          - task: build-arm
+            tags: [arm]
+            params: {CARGO_COMMAND: "build --release"}
+            file: repository/ci/tasks/arm-run.yml
       - put: container-image
         inputs: [image]
         get_params: {format: oci}
