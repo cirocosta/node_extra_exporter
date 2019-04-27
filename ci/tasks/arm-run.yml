@@ -1,5 +1,11 @@
 platform: linux
 
+image_resource:
+  type: registry-image
+  source:
+    repository: rust
+    tag: alpine
+
 inputs: 
   - name: repository
     path: .
@@ -18,6 +24,4 @@ run:
   path: /bin/sh
   args:
     - -ce
-    - |
-      chown -R pi .
-      su pi --login -c "cd $PWD && cargo $CARGO_COMMAND"
+    - exec cargo $CARGO_COMMAND

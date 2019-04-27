@@ -16,7 +16,29 @@ resources:
     source:
       repository: cirocosta/builder
 
+ 
+  - name: arm-image
+    type: registry-image-arm
+    tags: [ arm ]
+    source: 
+      repository: busybox
+      platform: { architecture: arm, os: linux }
+
+
 jobs:
+  - name: hello
+    plan:
+      - get: arm-image
+        tags: [arm]
+      - task: hello
+        tags: [arm]
+        image: arm-image
+        config:
+          platform: linux
+          run:
+            path: echo
+            args: [ "hello" ]
+
   - name: build
     public: true
     plan:
